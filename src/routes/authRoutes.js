@@ -32,6 +32,10 @@ router.post("/api/login", async (req, res) => {
         if (!user) {
             return res.status(400).json({ message: "User not found" });
         }
+        
+        if (!user.isActive) {
+            return res.status(400).json({ message: "User is deactivated" });
+        }
 
         const passCorrect = await bcrypt.compare(password, user.password);
         if (!passCorrect) {
@@ -50,19 +54,19 @@ export default router;
 
 
 router.get("/api/user", async (req,res)=>{
-    const email = req.body; // get user details through email
+    const email = req.query; // get user details through email
 
     try {
-        const user = await User.findOne(email).select('name email phoneNumber');
+        const user = await User.findOne(email).select('name email phoneNumber isActive');
         if (!user) {
             return res.status(400).json({ message: "User not found" });
         }
 
-        res.send(user);
-        res.status(201).json({ message: 'User saved successfully' });
+        res.status(200).json(user);
 
     } catch(error){
-        console.log("error : ", error)
+        console.log("error : ", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 })
 
@@ -88,27 +92,52 @@ router.patch("/api/user",async (req,res) => {
 })
 
 
-router.patch("/api/user/:id",async (req,res) => {
-    const id = req.params.id;
-    const {name, phoneNumber} = req.body;
+router.patch("/api/user/deactivate", async (req, res) => {
+    const { email } = req.body;
 
     try {
-        const updatedUser = await User.findByIdAndUpdate(
-            id, 
-            {name ,phoneNumber},
-            {new:true}).select("name email phoneNumber")
-
-        res.status(200).json({
-            message: "User details updated successfully",
-            user: updatedUser
-        });
+        const updatedUser = await User.findOneAndUpdate(
+            { email },
+            { isActive: false },
+            { new: true }
+        );
 
         if (!updatedUser) {
             return res.status(404).json({ message: "User not found" });
         }
 
+        res.status(200).json({
+            message: "Deactivated successfully",
+            user: updatedUser
+        });
+    } catch (error) {
+        console.error("Error deactivating user:", error); 
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+});
+
+
+router.patch("/api/user/:id", async (req, res) => {
+    const id = req.params.id;
+    const { name, phoneNumber } = req.body;
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            id,
+            { name, phoneNumber },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "User details updated successfully",
+            user: updatedUser
+        });
     } catch (error) {
         console.error(error);
-        res.status(500).send(error);
-      }
-})
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
