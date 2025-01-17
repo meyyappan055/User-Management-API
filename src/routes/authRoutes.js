@@ -65,3 +65,50 @@ router.get("/api/user", async (req,res)=>{
         console.log("error : ", error)
     }
 })
+
+
+router.patch("/api/user",async (req,res) => {
+    const {email , name, phoneNumber} = req.body;
+
+    try {
+        const updatedUser = await User.findOneAndUpdate(
+            { email },
+            { name, phoneNumber }, 
+            { new: true } 
+        ).select('name email phoneNumber'); 
+
+        res.status(200).json({
+            message: "User details updated successfully",
+            user: updatedUser
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+})
+
+
+router.patch("/api/user/:id",async (req,res) => {
+    const id = req.params.id;
+    const {name, phoneNumber} = req.body;
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            id, 
+            {name ,phoneNumber},
+            {new:true}).select("name email phoneNumber")
+
+        res.status(200).json({
+            message: "User details updated successfully",
+            user: updatedUser
+        });
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(error);
+      }
+})
