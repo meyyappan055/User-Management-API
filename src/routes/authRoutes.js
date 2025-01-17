@@ -1,5 +1,6 @@
 import express from 'express';
 import User from '../models/user.js';
+import bcrypt from "bcryptjs";
 
 const router = express.Router();
 
@@ -22,5 +23,27 @@ router.post('/api/register', async (req, res) => {
     }
 });
 
+
+router.post("/api/login", async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "User not found" });
+        }
+
+        const passCorrect = await bcrypt.compare(password, user.password);
+        if (!passCorrect) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
+
+        res.status(200).json({ message: "Login successful" });
+        
+    } catch (error) {
+        console.error("Error in login:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 
 export default router;
