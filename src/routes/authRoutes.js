@@ -13,19 +13,40 @@ const router = express.Router();
 router.post('/api/register', async (req, res) => {
     const { name, email, password , phoneNumber } = req.body;
 
-    try {
-        const userExists = await User.findOne({ email });
-        if (userExists) {
-            return res.status(400).json({ message: 'User already exists' });
+    const isValidEmail = (email) => {
+        const emailRegex = /\S+@\S+\.\S+/;
+        return emailRegex.test(email);
+    };
+
+    const isValidPassword = (password) => {
+        if (password.length >= 8) {
+            return true;
         }
-
-        const newUser = new User({ name, email, password , phoneNumber });
-        await newUser.save();
-        res.status(201).json({ message: 'User saved successfully' });
-
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error' });
     }
+    
+    if (isValidEmail(email)){
+
+        if(!isValidPassword(password)){
+            return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+        }
+        try {
+            const userExists = await User.findOne({ email });
+            if (userExists) {
+                return res.status(400).json({ message: 'User already exists' });
+            }
+    
+            const newUser = new User({ name, email, password , phoneNumber });
+            await newUser.save();
+            res.status(201).json({ message: 'User saved successfully' });
+    
+        } catch (error) {
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    }
+    else{
+        res.status(400).json({ message: 'Invalid email format' });
+    }
+    
 });
 
 
