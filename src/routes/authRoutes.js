@@ -6,7 +6,7 @@ const router = express.Router();
 
 
 router.post('/api/register', async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password , phoneNumber } = req.body;
 
     try {
         const userExists = await User.findOne({ email });
@@ -14,7 +14,7 @@ router.post('/api/register', async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        const newUser = new User({ name, email, password });
+        const newUser = new User({ name, email, password , phoneNumber });
         await newUser.save();
         res.status(201).json({ message: 'User saved successfully' });
 
@@ -53,7 +53,7 @@ router.get("/api/user", async (req,res)=>{
     const email = req.body; // get user details through email
 
     try {
-        const user = await User.findOne(email).select('name email')
+        const user = await User.findOne(email).select('name email phoneNumber');
         if (!user) {
             return res.status(400).json({ message: "User not found" });
         }
