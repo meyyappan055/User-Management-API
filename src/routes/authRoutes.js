@@ -1,6 +1,11 @@
 import express from 'express';
 import User from '../models/user.js';
 import bcrypt from "bcryptjs";
+import verifyToken from '../middlewares/auth.js';
+import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+
+dotenv.config();
 
 const router = express.Router();
 
@@ -42,8 +47,13 @@ router.post("/api/login", async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        res.status(200).json({ message: "Login successful" });
+        const token = jwt.sign({ 
+            userId: user._id
+        }, process.env.JWT_SECRET, {
+            expiresIn: '1h',
+        });
 
+        res.status(200).json({ message: "Login successful", token });
     } catch (error) {
         console.error("Error in login:", error);
         res.status(500).json({ message: "Internal server error" });
@@ -53,11 +63,16 @@ router.post("/api/login", async (req, res) => {
 export default router;
 
 
-router.get("/api/user", async (req,res)=>{
+router.get("/api/user",verifyToken, async (req,res)=>{
     const email = req.query; // get user details through email
 
     try {
-        const user = await User.findOne(email).select('name email phoneNumber isActive');
+        const superAdmin = await User.findOne({ isSuperAdmin: true });
+        if (!superAdmin) {
+            return res.status(400).json({ message: "You are not authorized to view this data" });
+        }
+
+        const user = await User.find(email).select('-password'); //exclude password
         if (!user) {
             return res.status(400).json({ message: "User not found" });
         }
