@@ -23,11 +23,21 @@ router.post('/api/register', async (req, res) => {
             return true;
         }
     }
-    
+
+    const isValidPhoneNumber = (phoneNumber) => {
+        if (phoneNumber.length === 10) {
+            return true;
+        }
+    };
+
     if (isValidEmail(email)){
 
         if(!isValidPassword(password)){
             return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+        }
+
+        if(!isValidPhoneNumber(phoneNumber)){
+            return res.status(400).json({ message: 'Phone number must be 10 digits long' });
         }
         try {
             const userExists = await User.findOne({ email });
@@ -80,8 +90,6 @@ router.post("/api/login", async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
-
-export default router;
 
 
 router.get("/api/user",verifyToken, async (req,res)=>{
@@ -177,3 +185,5 @@ router.patch("/api/user/:id", async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
+export default router;
